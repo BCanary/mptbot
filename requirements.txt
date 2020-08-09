@@ -1,2 +1,4 @@
 pytelegrambotapi
 xlrd
+lxml
+bs4
