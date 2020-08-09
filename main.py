@@ -63,6 +63,7 @@ def getExcelPosition():
 	uvedomleni = 0
 	vsego = 0
 	summ_ball = 0
+	status = "Error"
 	
 	#[1021.0, 'Максяшев Андрей Сергеевич', 3.1053, 9.0, 'Да'] 
 	
@@ -74,6 +75,7 @@ def getExcelPosition():
 			#print(val)
 			if val[1] == "Коняшин Владислав Владимирович":
 				position = i-start
+				status = val[4]
 			if val[4] == "Да":
 				uvedomleni += 1
 			vsego = val[0]
@@ -83,7 +85,8 @@ def getExcelPosition():
 			"position": str(position),
 			"uvedomleni": str(uvedomleni),
 			"vsego": str(vsego),
-			"sredni": str(summ_ball/vsego)
+			"sredni": str(summ_ball/vsego),
+			"status": status
 		}
 		
 @bot.message_handler(content_types=['text'])
@@ -95,7 +98,7 @@ def get_text_messages(message):
 		bot.send_message(message.from_user.id, "Отправил запрос на удаленный сервер... Жду файла xlsx")
 		getExcelTable()
 		response = getExcelPosition()
-		bot.send_message(message.from_user.id, "Ты на: " + response["position"] + " месте\nВсего подано уведомлений: " + response["uvedomleni"] + "\n" + "Всего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
+		bot.send_message(message.from_user.id, "Ты на: " + response["position"] + " месте\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\n" + "Всего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
 
 #print(getExcelPosition()["sredni"])
 bot.polling(none_stop=True, interval=0)
