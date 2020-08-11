@@ -69,6 +69,7 @@ def getExcelPosition(tr):
 	summ_ball = 0
 	status = "Error"
 	last_uvedomlenie_ball = -1
+	same_ball = -1
 	
 	#[1021.0, 'Максяшев Андрей Сергеевич', 3.1053, 9.0, 'Да'] 
 	
@@ -100,6 +101,7 @@ def getExcelPosition(tr):
 			if val[4] == "Да":
 				if val[2] >= 4.48 and val[2] <= 4.5:
 					same_score_position = i-start
+					same_ball = val[2]
 				if i-start == mest:
 					last_uvedomlenie_ball = val[2]
 				uvedomleni += 1
@@ -109,6 +111,7 @@ def getExcelPosition(tr):
 
 	except IndexError:
 		return {
+			"same_ball" : str(same_ball),
 			"same_score_position": str(same_score_position),
 			"last_uvedomlenie_ball": str(last_uvedomlenie_ball),
 			"position": str(position),
@@ -133,7 +136,7 @@ def get_text_messages(message):
 
 			getExcelTable(tr)
 			response = getExcelPosition(tr)
-			bot.send_message(message.from_user.id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
+			bot.send_message(message.from_user.id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + " ("+ response["same_ball"] + ")" + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
 
 #print(getExcelPosition()["sredni"])
 bot.polling(none_stop=True, interval=0)
