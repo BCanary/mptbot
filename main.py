@@ -5,6 +5,10 @@ import telebot
 from telebot import types
 from bs4 import BeautifulSoup
 
+"""
+ОСТОРОЖНО ЗДЕСЬ И ДАЛЕЕ ГОВНОКОД НАПИСАННЫЙ ПОД СТРЕССОМ! Я ВАС ПРЕДУПРЕДИЛ!
+"""
+
 markup = types.ReplyKeyboardMarkup()
 itembtn1 = types.KeyboardButton('информация')
 markup.add(itembtn1)
@@ -19,7 +23,7 @@ excel_file = xlrd.open_workbook('temp.xlsx')
 #выбираем активный лист
 sheet = excel_file.sheet_by_index(0)
 
-def getExcelTable():
+def getExcelTable(tr):
 	global excel_file, sheet
 	
 	r = requests.get("https://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/")
@@ -27,9 +31,9 @@ def getExcelTable():
 	print(r.status_code)
 	
 	b = BeautifulSoup(r.content, "lxml")
-	
-	
-	r = requests.get(b.find_all("table")[3].find_all("tr")[2].find_all("td")[1].find("a")["href"])
+	#						tr 5 (Инф безопасность)
+	#table 3 (специальности) tr 2 (Инф системы и прог) td 1 (350 мест)
+	r = requests.get(b.find_all("table")[3].find_all("tr")[tr].find_all("td")[1].find("a")["href"])
 	
 	text_start = r.text.find("http://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/home/")
 	
@@ -54,22 +58,39 @@ def getExcelTable():
 	sheet = excel_file.sheet_by_index(0)
 	print("Loaded!")
 
-def getExcelPosition():
+def getExcelPosition(tr):
 	global excel_file
 	
 	start = 3
-	
+	same_score_position = -1
 	position = -1
 	uvedomleni = 0
 	vsego = 0
 	summ_ball = 0
 	status = "Error"
+	last_uvedomlenie_ball = -1
 	
 	#[1021.0, 'Максяшев Андрей Сергеевич', 3.1053, 9.0, 'Да'] 
 	
+	sheet = excel_file.sheet_by_index(0)
+
+	if tr == 2:
+		mest = 350
+	elif tr == 5:
+		mest = 45
+
+	check = 0
+	for i in range(start, 30+start): 
+		val = sheet.row_values(i)
+		if val[4] == "Да":
+			print(val)
+			check += 1
+	if check < 29:
+		print("NO")
+		sheet = excel_file.sheet_by_index(1)
 	try:
 		for i in range(start, 30000):
-			if i == 3:
+			if i <= 3:
 				continue
 			val = sheet.row_values(i)
 			#print(val)
@@ -77,11 +98,19 @@ def getExcelPosition():
 				position = i-start
 				status = val[4]
 			if val[4] == "Да":
+				if val[2] >= 4.48 and val[2] <= 4.5:
+					same_score_position = i-start
+				if i-start == mest:
+					last_uvedomlenie_ball = val[2]
 				uvedomleni += 1
 			vsego = val[0]
 			summ_ball += val[2]
+
+
 	except IndexError:
 		return {
+			"same_score_position": str(same_score_position),
+			"last_uvedomlenie_ball": str(last_uvedomlenie_ball),
 			"position": str(position),
 			"uvedomleni": str(uvedomleni),
 			"vsego": str(vsego),
@@ -96,9 +125,15 @@ def get_text_messages(message):
 		bot.send_message(message.from_user.id, "Жми кнопку", reply_markup=markup)
 	if (message.text) == "информация":
 		bot.send_message(message.from_user.id, "Отправил запрос на удаленный сервер... Жду файла xlsx")
-		getExcelTable()
-		response = getExcelPosition()
-		bot.send_message(message.from_user.id, "Ты на: " + response["position"] + " месте\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\n" + "Всего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
+		for tr in [2,5]:
+			if tr == 2:
+				profa = "Программирование"
+			elif tr == 5:
+				profa = "Безопасность"
+
+			getExcelTable(tr)
+			response = getExcelPosition(tr)
+			bot.send_message(message.from_user.id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
 
 #print(getExcelPosition()["sredni"])
 bot.polling(none_stop=True, interval=0)
