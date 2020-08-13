@@ -2,43 +2,24 @@
 import requests
 import xlrd
 import vk_api
-from random import randint
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import VkLongPoll, VkEventType
+import game21
+from random import randint, choice
+from keyboards import keyboard, err_keyboard, in_game_search_keyboard, in_game_keyboard
+from vk_api.longpoll import VkEventType
 from bs4 import BeautifulSoup
-
+from config import bot, longpoll
+from bot_functions import sendMessage
 """
 ОСТОРОЖНО ЗДЕСЬ И ДАЛЕЕ ГОВНОКОД НАПИСАННЫЙ ПОД СТРЕССОМ! Я ВАС ПРЕДУПРЕДИЛ!
 """
 
-token = "f729e0d0d654a503b745610253ae910aef4af57b473998d7e0811326abdb107fe1535a825ea9a699ec002"
-
-bot = vk_api.VkApi(token=token)
-
-keyboard = VkKeyboard(one_time=True)
-keyboard.add_button('информация', color=VkKeyboardColor.POSITIVE)
-
-err_keyboard = VkKeyboard(one_time=True)
-err_keyboard.add_button('информация', color=VkKeyboardColor.POSITIVE)
-err_keyboard.add_button("ошибка", color=VkKeyboardColor.NEGATIVE)
-
 last_error = ""
-
-longpoll = VkLongPoll(bot)
 
 #XLSX_URL = "https://6c869467-a-7da13995-s-sites.googlegroups.com/a/mpt.ru/priemnaa-komissia-2020/home/090207%20%20%20%D0%91%D0%AE%D0%94%D0%96%D0%95%D0%A2%20.xlsx?attachauth=ANoY7coOmUFB5Ramu3cJrEdrMzRqXq0HTbQgyRTUsY6cc-4ryf5yMUOiLqyNTpBCi_qSygzWeaXNStBDBnpzgpUEejaajauLUfKA1-WBOUse91A5CO7lx1lQ17_3HVpDbcLte1zps7i6hwSAwtd0rdnju4Z4pX7INVjAKnoEEF_yTpCL99L2owONfUNV3-oA_EaqByXfp9VsC-HmmsTOnDQ5gcFtJf5rkppU-UZmA4fQSDIXsz6rkN8wi_ZlVbXkrEvc9oyu8UCEon0tqbBDHVCuGWYnCtOdsg%3D%3D&attredirects=0&d=1"
 excel_file = xlrd.open_workbook('temp.xlsx')
 
 #выбираем активный лист
 sheet = excel_file.sheet_by_index(0)
-
-def sendMessage(user_id, message, keyboard=None):
-	if keyboard == None:
-		bot.method("messages.send", {"user_id": user_id, "message":message, 
-			"random_id": randint(0,1024*1024)})
-	else:
-		bot.method("messages.send", {"user_id": user_id, "message":message, 
-					"random_id": randint(0,1024*1024), "keyboard": keyboard.get_keyboard()})
 
 def getExcelTable(tr):
 	global excel_file, sheet
@@ -157,27 +138,64 @@ for event in longpoll.listen():
 		if event.to_me:
 
 			text = event.text
+			if(not event.user_id in game21.lobby and not event.user_id in game21.in_game):
+						
+				if (text) == "информация":
+					sendMessage(event.user_id, "Отправил запрос на удаленный сервер... Жду файла xlsx")
+					for tr in [2,5]:
+						if tr == 2:
+							profa = "Программирование"
+						elif tr == 5:
+							profa = "Безопасность"
 
-			if (text) == "информация":
-				sendMessage(event.user_id, "Отправил запрос на удаленный сервер... Жду файла xlsx")
-				for tr in [2,5]:
-					if tr == 2:
-						profa = "Программирование"
-					elif tr == 5:
-						profa = "Безопасность"
+						result = getExcelTable(tr)
+						if(not result[0]):
+							last_error = result[2]
+							sendMessage(event.user_id,  result[1], err_keyboard)
+							break # Прерываем дальнейшее выполнение цикла из-за ошибки
+						response = getExcelPosition(tr)
+						sendMessage(event.user_id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + " ("+ response["same_ball"] + ")" + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], keyboard)
+				elif text == "Начать":
+					sendMessage(event.user_id, "Привет! Жми кнопку ниже меня!", keyboard)
 
-					result = getExcelTable(tr)
-					if(not result[0]):
-						last_error = result[2]
-						sendMessage(event.user_id,  result[1], err_keyboard)
-						break # Прерываем дальнейшее выполнение цикла из-за ошибки
-					response = getExcelPosition(tr)
-					sendMessage(event.user_id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + " ("+ response["same_ball"] + ")" + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], keyboard)
-			elif text == "Начать":
-				sendMessage(event.user_id, "Привет! Жми кнопку ниже меня!", keyboard)
-			elif text == "ошибка":
-				sendMessage(event.user_id, "Только разрабу: " + str(last_error), keyboard)
-			elif text == "лох":
-				sendMessage(event.user_id, "Сам лох", keyboard)
+				elif text == "ошибка":
+					sendMessage(event.user_id, "Только разрабу: " + str(last_error), keyboard)
+				#21
+				if text == "играть в 21":
+					in_game_search = str(len(game21.lobby))
+					if(event.user_id in game21.lobby):
+						sendMessage(event.user_id, "Вы уже ждете игру, сейчас в поиске " + in_game_search + " людей")
+					else:
+						game21.lobby.append(event.user_id)
+						users_to_play = []
+						users_to_play.extend(game21.lobby)
+						users_to_play.remove(event.user_id)
+
+						sendMessage(event.user_id, "Вы поставлены в поиск игры, сейчас в поиске " + in_game_search + " людей", in_game_search_keyboard)
+
+						#Пишем всем кто в лобби о новом игроке
+						for user_id in users_to_play:
+							sendMessage(user_id, "Новый игрок зашел в поиск! Сейчас в поиске " + in_game_search + " людей", in_game_search_keyboard) 
+							if(int(in_game_search) >= 1):
+
+								user_id_to_play = choice(users_to_play)
+								sendMessage(event.user_id, "Игра найдена", in_game_keyboard)
+								sendMessage(user_id_to_play, "Игра найдена", in_game_keyboard) 
+
+								game21.games.append(game21.Game21(event.user_id, user_id_to_play))
+				else:
+					sendMessage(event.user_id, "Не понимаю команду", keyboard)
+			elif(event.user_id in game21.in_game):
+				print([game.players for game in game21.games])
+				if text == "Взять карту":
+					game21.findLobby(event.user_id).action(event.user_id, "take_card")
+				if text == "Выйти из игры":
+					game21.findLobby(event.user_id).action(event.user_id, "leave")
+				if text == "Пропустить ход":
+					game21.findLobby(event.user_id).action(event.user_id, "pass")
 			else:
-				sendMessage(event.user_id, "Не понимаю команду", keyboard)
+				if text == "Выйти из поиска":
+					sendMessage(event.user_id, "Вы вышли из поиска игры", keyboard)
+					game21.lobby.remove(event.user_id)
+				else:
+					sendMessage(event.user_id, "Не понял, сейчас в поиске " + in_game_search + " людей", in_game_search_keyboard)
