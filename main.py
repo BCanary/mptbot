@@ -29,6 +29,7 @@ def getExcelTable(tr):
 	r = requests.get("https://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/")
 	
 	print(r.status_code)
+	#print(r.text)
 	
 	b = BeautifulSoup(r.content, "lxml")
 	#						tr 5 (Инф безопасность)
@@ -42,12 +43,16 @@ def getExcelTable(tr):
 		text_end += 1
 		if r.text[text_end] == "\"":
 			break 
-	
+
 	xls_url = r.text[text_start:text_end]
 	
 	# download the file contents in binary format
-	r = requests.get(xls_url)
-	 
+
+	try:
+		r = requests.get(xls_url)
+	except:
+		return (False, "Не удалось получить ссылку на файл...\nПопробуйте ручной вход\nhttps://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/")
+
 	# open method to open a file on your system and write the contents
 	with open("temp.xlsx", "wb") as code:
 		code.write(r.content)
@@ -56,7 +61,7 @@ def getExcelTable(tr):
 	excel_file = xlrd.open_workbook('temp.xlsx')
 	#выбираем активный лист
 	sheet = excel_file.sheet_by_index(0)
-	print("Loaded!")
+	return (True, "Успешно загружено!")
 
 def getExcelPosition(tr):
 	global excel_file
@@ -134,7 +139,10 @@ def get_text_messages(message):
 			elif tr == 5:
 				profa = "Безопасность"
 
-			getExcelTable(tr)
+			result = getExcelTable(tr)
+			if(not result[0]):
+				bot.send_message(message.from_user.id, result[1])
+				break # Прерываем дальнейшее выполнение цикла из-за ошибки
 			response = getExcelPosition(tr)
 			bot.send_message(message.from_user.id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + " ("+ response["same_ball"] + ")" + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
 
