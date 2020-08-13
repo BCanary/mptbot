@@ -177,5 +177,7 @@ for event in longpoll.listen():
 				sendMessage(event.user_id, "Привет! Жми кнопку ниже меня!", keyboard)
 			elif text == "ошибка":
 				sendMessage(event.user_id, "Только разрабу: " + str(last_error), keyboard)
+			elif text == "лох":
+				sendMessage(event.user_id, "Сам лох", keyboard)
 			else:
 				sendMessage(event.user_id, "Не понимаю команду", keyboard)
