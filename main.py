@@ -5,10 +5,6 @@ import vk_api
 from random import randint
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
-<<<<<<< HEAD
-#from telebot import types
-=======
->>>>>>> c480d23b0d641568ea8c439cf878bf96d8f69bed
 from bs4 import BeautifulSoup
 
 """
