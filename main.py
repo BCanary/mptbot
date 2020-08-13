@@ -3,8 +3,9 @@ import requests
 import xlrd
 import vk_api
 from random import randint
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
-from telebot import types
+#from telebot import types
 from bs4 import BeautifulSoup
 
 """
@@ -15,6 +16,15 @@ token = "f729e0d0d654a503b745610253ae910aef4af57b473998d7e0811326abdb107fe1535a8
 
 bot = vk_api.VkApi(token=token)
 
+keyboard = VkKeyboard(one_time=True)
+keyboard.add_button('информация', color=VkKeyboardColor.POSITIVE)
+
+err_keyboard = VkKeyboard(one_time=True)
+err_keyboard.add_button('информация', color=VkKeyboardColor.POSITIVE)
+err_keyboard.add_button("ошибка", color=VkKeyboardColor.NEGATIVE)
+
+last_error = ""
+
 longpoll = VkLongPoll(bot)
 
 #XLSX_URL = "https://6c869467-a-7da13995-s-sites.googlegroups.com/a/mpt.ru/priemnaa-komissia-2020/home/090207%20%20%20%D0%91%D0%AE%D0%94%D0%96%D0%95%D0%A2%20.xlsx?attachauth=ANoY7coOmUFB5Ramu3cJrEdrMzRqXq0HTbQgyRTUsY6cc-4ryf5yMUOiLqyNTpBCi_qSygzWeaXNStBDBnpzgpUEejaajauLUfKA1-WBOUse91A5CO7lx1lQ17_3HVpDbcLte1zps7i6hwSAwtd0rdnju4Z4pX7INVjAKnoEEF_yTpCL99L2owONfUNV3-oA_EaqByXfp9VsC-HmmsTOnDQ5gcFtJf5rkppU-UZmA4fQSDIXsz6rkN8wi_ZlVbXkrEvc9oyu8UCEon0tqbBDHVCuGWYnCtOdsg%3D%3D&attredirects=0&d=1"
@@ -23,16 +33,21 @@ excel_file = xlrd.open_workbook('temp.xlsx')
 #выбираем активный лист
 sheet = excel_file.sheet_by_index(0)
 
-def sendMessage(user_id, message):
-	bot.method("messages.send", {"user_id": user_id, "message":message, "random_id": randint(0,1024*1024)})
+def sendMessage(user_id, message, keyboard=None):
+	if keyboard == None:
+		bot.method("messages.send", {"user_id": user_id, "message":message, 
+			"random_id": randint(0,1024*1024)})
+	else:
+		bot.method("messages.send", {"user_id": user_id, "message":message, 
+					"random_id": randint(0,1024*1024), "keyboard": keyboard.get_keyboard()})
 
 def getExcelTable(tr):
 	global excel_file, sheet
 	
 	try:
 		r = requests.get("https://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/")
-	except:
-		return (False, "Не удалось подключится к сайту")
+	except Exception as exception:
+		return (False, "Не удалось подключится к сайту", exception)
 	
 	print(r.status_code)
 	#print(r.text)
@@ -42,8 +57,8 @@ def getExcelTable(tr):
 	#table 3 (специальности) tr 2 (Инф системы и прог) td 1 (350 мест)
 	try:
 		r = requests.get(b.find_all("table")[3].find_all("tr")[tr].find_all("td")[1].find("a")["href"])
-	except:
-		return (False, "Не удалось получить таблицу")
+	except Exception as exception:
+		return (False, "Не удалось получить таблицу", exception)
 	
 	text_start = r.text.find("http://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/home/")
 	
@@ -59,8 +74,8 @@ def getExcelTable(tr):
 
 	try:
 		r = requests.get(xls_url)
-	except:
-		return (False, "Не удалось получить ссылку на файл...\nПопробуйте ручной вход\nhttps://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/")
+	except Exception as exception:
+		return (False, "Не удалось получить ссылку на файл...\nПопробуйте ручной вход\nhttps://sites.google.com/a/mpt.ru/priemnaa-komissia-2020/", exception)
 
 	# open method to open a file on your system and write the contents
 	with open("temp.xlsx", "wb") as code:
@@ -70,7 +85,7 @@ def getExcelTable(tr):
 	excel_file = xlrd.open_workbook('temp.xlsx')
 	#выбираем активный лист
 	sheet = excel_file.sheet_by_index(0)
-	return (True, "Успешно загружено!")
+	return (True, "Успешно загружено!", "нету")
 
 def getExcelPosition(tr):
 	global excel_file
@@ -154,7 +169,14 @@ for event in longpoll.listen():
 
 					result = getExcelTable(tr)
 					if(not result[0]):
-						sendMessage(event.user_id,  result[1])
+						last_error = result[2]
+						sendMessage(event.user_id,  result[1], err_keyboard)
 						break # Прерываем дальнейшее выполнение цикла из-за ошибки
 					response = getExcelPosition(tr)
-					sendMessage(event.user_id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + " ("+ response["same_ball"] + ")" + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], reply_markup=markup)
+					sendMessage(event.user_id, profa + ": Ты на: " + response["position"] + " месте\nПозиция со схожим баллом в уведомления:" + response["same_score_position"] + " ("+ response["same_ball"] + ")" + "\nСтатус твоего уведомления:" + response["status"] + "\nВсего подано уведомлений: " + response["uvedomleni"] + "\nПоследний балл на уведомлениях: " + response["last_uvedomlenie_ball"] + "\nВсего подано заявлений:" + response["vsego"] + "\nОбщий средний балл:" + response["sredni"], keyboard)
+			elif text == "Начать":
+				sendMessage(event.user_id, "Привет! Жми кнопку ниже меня!", keyboard)
+			elif text == "ошибка":
+				sendMessage(event.user_id, "Только разрабу: " + str(last_error), keyboard)
+			else:
+				sendMessage(event.user_id, "Не понимаю команду", keyboard)
