@@ -4,7 +4,6 @@ import xlrd
 import vk_api
 from random import randint
 from vk_api.longpoll import VkLongPoll, VkEventType
-from telebot import types
 from bs4 import BeautifulSoup
 
 """
