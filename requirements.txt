@@ -1,4 +1,4 @@
-pytelegrambotapi
+vk_api
 xlrd
 lxml
 bs4
