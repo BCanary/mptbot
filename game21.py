@@ -125,11 +125,11 @@ class Game21:
 				sendMessage(self.anotherPlayer(player)["id"], "Вы проиграли!")
 				self.disconnectAll()
 			if self.propusk == 2:
-				if self.getSumm(player["cards"]) > self.getSumm(self.anotherPlayer(player["id"])["cards"]):
+				if self.getSumm(player["cards"]) > self.getSumm(self.anotherPlayer(player)["cards"]):
 					sendMessage(player["id"], "Никто не сделал ход. Вы выйграли!")
 					sendMessage(self.anotherPlayer(player)["id"], "Никто ни сделал ход. Вы проиграли!")
 					self.disconnectAll()
-				elif self.getSumm(player["cards"]) == self.getSumm(self.anotherPlayer(player["id"])["cards"]):
+				elif self.getSumm(player["cards"]) == self.getSumm(self.anotherPlayer(player)["cards"]):
 					sendMessage(player["id"], "Никто не сделал ход. Ничья!")
 					sendMessage(self.anotherPlayer(player)["id"], "Никто ни сделал ход. Ничья!")
 					self.disconnectAll()
