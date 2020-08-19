@@ -35,8 +35,13 @@ def getExcelTable(tr):
 	b = BeautifulSoup(r.content, "lxml")
 	#						tr 5 (Инф безопасность)
 	#table 3 (специальности) tr 2 (Инф системы и прог) td 1 (350 мест)
+	baka = 2
+	if tr == 5:
+		baka = 3
+	print(baka)
+	url = b.find_all("table")[3].find_all("tr")[0].find_all("td")[baka].find("a")["href"]
 	try:
-		r = requests.get(b.find_all("table")[3].find_all("tr")[tr].find_all("td")[1].find("a")["href"])
+		r = requests.get(url)
 	except Exception as exception:
 		return (False, "Не удалось получить таблицу", exception)
 	
@@ -93,7 +98,7 @@ def getExcelPosition(tr):
 	for i in range(start, 30+start): 
 		val = sheet.row_values(i)
 		if val[4] == "Да":
-			print(val)
+			#print(val)
 			check += 1
 	if check < 29:
 		print("NO")
@@ -129,7 +134,6 @@ def getExcelPosition(tr):
 			"sredni": str(summ_ball/vsego),
 			"status": status
 		}
-		
 
 for event in longpoll.listen():
 
@@ -161,7 +165,7 @@ for event in longpoll.listen():
 				elif text == "ошибка":
 					sendMessage(event.user_id, "Только разрабу: " + str(last_error), keyboard)
 				#21
-				if text == "играть в 21":
+				elif text == "играть в 21" and False:
 					in_game_search = str(len(game21.lobby))
 					if(event.user_id in game21.lobby):
 						sendMessage(event.user_id, "Вы уже ждете игру, сейчас в поиске " + in_game_search + " людей")
@@ -185,8 +189,8 @@ for event in longpoll.listen():
 								game21.games.append(game21.Game21(event.user_id, user_id_to_play))
 				else:
 					sendMessage(event.user_id, "Не понимаю команду", keyboard)
-			elif(event.user_id in game21.in_game):
-				print([game.players for game in game21.games])
+			elif(event.user_id in game21.in_gamec and False):
+				#print([game.players for game in game21.games])
 				if text == "Взять карту":
 					game21.findLobby(event.user_id).action(event.user_id, "take_card")
 				if text == "Выйти из игры":
@@ -194,7 +198,7 @@ for event in longpoll.listen():
 				if text == "Пропустить ход":
 					game21.findLobby(event.user_id).action(event.user_id, "pass")
 			else:
-				if text == "Выйти из поиска":
+				if text == "Выйти из поиска" and False:
 					sendMessage(event.user_id, "Вы вышли из поиска игры", keyboard)
 					game21.lobby.remove(event.user_id)
 				else:
