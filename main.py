@@ -134,7 +134,7 @@ def getExcelPosition(tr):
 			"sredni": str(summ_ball/vsego),
 			"status": status
 		}
-
+info_variations_text = ["Информация", "информация", "таблица", "где таблица", "Таблица", "Где таблица", "Я не понимаю", "Але", "Дурацкий"]
 for event in longpoll.listen():
 
 	if event.type == VkEventType.MESSAGE_NEW:
@@ -144,7 +144,7 @@ for event in longpoll.listen():
 			text = event.text
 			if(not event.user_id in game21.lobby and not event.user_id in game21.in_game):
 						
-				if (text) == "информация":
+				if text in info_variations_text:
 					sendMessage(event.user_id, "Отправил запрос на удаленный сервер... Жду файла xlsx")
 					for tr in [2,5]:
 						if tr == 2:
