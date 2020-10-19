@@ -6,14 +6,14 @@ from telebot import types
 from bs4 import BeautifulSoup
 
 """
-ОСТОРОЖНО ЗДЕСЬ И ДАЛЕЕ ГОВНОКОД НАПИСАННЫЙ ПОД СТРЕССОМ! Я ВАС ПРЕДУПРЕДИЛ!
+ОСТОРОЖНО ЗДЕСЬ И ДАЛЕЕ ГОВНОКОД! Я ВАС ПРЕДУПРЕДИЛ!
 """
 
 markup = types.ReplyKeyboardMarkup()
 itembtn1 = types.KeyboardButton('информация')
 markup.add(itembtn1)
 
-token = "1364150425:AAErYiwGtWHTM11dL82aY6uL4rte6IwhqiM"
+token = ""
 
 bot = telebot.TeleBot(token)
 
